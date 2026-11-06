@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animation Idea Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --maroon:#822336; --maroon-ink:#6a1b2b; --maroon-soft:#f6e9ec;
+  --bg:#f3f3f4; --surface:#ffffff; --ink:#1f1f22; --muted:#5d5d66; --line:#d6d6db;
+  --strip:#2b2b30; --frame:#ffffff; --hole:#f3f3f4; --lock:#822336;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --maroon:#d0697d; --maroon-ink:#e89aa9; --maroon-soft:#3a2026;
+    --bg:#18181b; --surface:#232327; --ink:#ededf0; --muted:#a6a6b0; --line:#3a3a41;
+    --strip:#0f0f11; --frame:#2c2c31; --hole:#18181b; --lock:#e89aa9;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --maroon:#d0697d; --maroon-ink:#e89aa9; --maroon-soft:#3a2026;
+  --bg:#18181b; --surface:#232327; --ink:#ededf0; --muted:#a6a6b0; --line:#3a3a41;
+  --strip:#0f0f11; --frame:#2c2c31; --hole:#18181b; --lock:#e89aa9;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Google Sans Flex","Google Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:1rem;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.5rem 1.5rem;
+  border-bottom:3px solid var(--maroon);padding-bottom:.75rem}
+header h1{margin:0;font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);font-size:.95rem}
+
+.controls{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:flex-end;margin:1.5rem 0 0}
+.group{display:flex;flex-direction:column;gap:.35rem}
+.group > span{font-size:.85rem;color:var(--muted);font-weight:500}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{font:inherit;font-size:.92rem;border:0;background:none;color:var(--ink);padding:.45rem .95rem;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--maroon);color:#fff;font-weight:600}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:#18181b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"]{color:#18181b}}
+
+/* Hero: the idea sentence */
+.hero{margin:2.25rem 0 0}
+.idea{font-size:clamp(1.9rem,4.6vw,3.4rem);line-height:1.18;font-weight:700;letter-spacing:-.02em;
+  margin:0;max-width:22ch;font-variation-settings:"opsz" 144}
+.idea .slot{font:inherit;color:inherit;background:none;border:0;padding:0 .05em;cursor:pointer;
+  text-align:left;border-bottom:.08em solid var(--line);transition:border-color .15s}
+.idea .slot:hover{border-bottom-color:var(--maroon)}
+.idea .slot.locked{border-bottom-color:var(--maroon);color:var(--maroon)}
+.idea .slot.locked::after{content:"";display:inline-block;width:.42em;height:.42em;margin-left:.15em;vertical-align:.55em;
+  background:currentColor;-webkit-mask:var(--lockicon) center/contain no-repeat;mask:var(--lockicon) center/contain no-repeat}
+:root{--lockicon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1zm2 0h6V7a3 3 0 0 0-6 0v3z'/%3E%3C/svg%3E")}
+.idea .slot.spinning{color:var(--muted)}
+.twist{margin:1rem 0 0;font-size:clamp(1.05rem,2vw,1.35rem);color:var(--muted);max-width:50ch}
+.twist strong{color:var(--ink);font-weight:600}
+.twist .slot{font:inherit;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;border-bottom:2px solid var(--line)}
+.twist .slot.locked{border-bottom-color:var(--maroon);color:var(--maroon)}
+.hint{margin:.9rem 0 0;color:var(--muted);font-size:.9rem}
+
+.actions{display:flex;flex-wrap:wrap;gap:.75rem;margin:1.5rem 0 0}
+.btn{font:inherit;font-weight:600;border-radius:12px;padding:.8rem 1.4rem;cursor:pointer;border:2px solid var(--maroon);
+  background:var(--surface);color:var(--maroon)}
+.btn.primary{background:var(--maroon);color:#fff;font-size:1.1rem;padding:.85rem 1.8rem}
+:root[data-theme="dark"] .btn.primary{color:#18181b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#18181b}}
+.btn:active{transform:translateY(1px)}
+:focus-visible{outline:3px solid var(--maroon);outline-offset:3px}
+
+/* Plan */
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:2.5rem 0 0}
+.plan > div{background:var(--surface);padding:1.1rem 1.2rem}
+.plan h2{margin:0 0 .35rem;font-size:.9rem;color:var(--muted);font-weight:500}
+.plan .big{font-size:1.2rem;font-weight:700;margin:0 0 .3rem}
+.plan p{margin:0;font-size:.95rem}
+.plan ul{margin:.2rem 0 0;padding-left:1.1rem;font-size:.95rem}
+.plan li+li{margin-top:.3rem}
+
+/* Storyboard film strip */
+.sb-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:.5rem;margin:2.75rem 0 .75rem}
+.sb-head h2{margin:0;font-size:1.35rem;font-weight:700}
+.sb-head p{margin:0;color:var(--muted);font-size:.92rem}
+.strip-scroll{overflow-x:auto;border-radius:10px}
+.strip{--h:14px;display:flex;gap:14px;background:var(--strip);padding:calc(var(--h) + 16px) 16px;width:max-content;min-width:100%;
+  background-image:
+    radial-gradient(circle at 50% 50%, var(--hole) 4.5px, transparent 5px),
+    radial-gradient(circle at 50% 50%, var(--hole) 4.5px, transparent 5px);
+  background-size:22px var(--h),22px var(--h);
+  background-position:0 6px, 0 calc(100% - 6px);
+  background-repeat:repeat-x}
+.panel{width:200px;flex:none;display:flex;flex-direction:column;background:var(--frame);border-radius:4px;overflow:hidden}
+.panel .draw{aspect-ratio:4/3;border-bottom:1px solid var(--line);position:relative;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:33.4% 33.4%;background-position:-1px -1px;opacity:.9}
+.panel .num{position:absolute;top:6px;left:8px;font-weight:700;font-size:.85rem;color:var(--muted)}
+.panel .cap{padding:.6rem .7rem .7rem;font-size:.9rem;line-height:1.35}
+.panel .cap small{display:block;color:var(--muted);font-size:.78rem;margin-top:.35rem}
+
+.print-only{display:none}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Print: a storyboard worksheet */
+@media print{
+  :root{--bg:#fff;--surface:#fff;--ink:#000;--muted:#444;--line:#999;--frame:#fff;--maroon:#822336;padding:0}
+  @page{margin:.5in}
+  body{background:#fff;font-size:11pt}
+  .wrap{padding:0;max-width:none}
+  .controls,.actions,.hint,.no-print,.sb-head p{display:none!important}
+  .print-only{display:block}
+  .namebar{display:flex;gap:2rem;margin:0 0 .6rem;font-size:11pt}
+  .namebar span{flex:1;border-bottom:1px solid #000;padding-bottom:2px}
+  .namebar span.short{flex:0 0 1.2in}
+  header{border-bottom-width:2px}
+  .hero{margin-top:.8rem}
+  .idea{font-size:20pt;max-width:none}
+  .idea .slot{border:0;color:#000}
+  .idea .slot.locked::after{display:none}
+  .twist{font-size:12pt;margin-top:.3rem}
+  .twist .slot{border:0}
+  .plan{margin-top:.8rem;grid-template-columns:repeat(3,1fr);border-radius:0;break-inside:avoid}
+  .plan > div{padding:.5rem .6rem}
+  .plan .big{font-size:11pt}
+  .plan p,.plan ul{font-size:9.5pt}
+  .plan .tips{display:none}
+  .sb-head{margin:.9rem 0 .4rem}
+  .sb-head h2{font-size:13pt}
+  .strip-scroll{overflow:visible}
+  .strip{background:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:.18in;width:auto}
+  .panel{width:auto;border:1.5px solid #000;border-radius:0;break-inside:avoid}
+  .panel .draw{background-image:none;border-bottom:1.5px solid #000}
+  .panel .cap{font-size:9.5pt}
+  .panel .cap small{font-size:8.5pt;color:#000}
+  .notes{margin-top:.25in;break-inside:avoid}
+  .notes h3{font-size:11pt;margin:0 0 .1in}
+  .notes div{border-bottom:1px solid #999;height:.32in}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Animation Idea Generator</h1>
+    <p>Digital Art 1, Toppenish High School</p>
+  </header>
+
+  <div class="print-only namebar" aria-hidden="true">
+    <span>Name:</span><span class="short">Period:</span><span class="short">Date:</span>
+  </div>
+
+  <section class="controls" aria-label="Settings">
+    <div class="group">
+      <span id="lvl-l">How big?</span>
+      <div class="seg" role="group" aria-labelledby="lvl-l" id="level">
+        <button type="button" data-v="warm" aria-pressed="true">Warm-up</button>
+        <button type="button" data-v="short" aria-pressed="false">Short scene</button>
+        <button type="button" data-v="challenge" aria-pressed="false">Challenge</button>
+      </div>
+    </div>
+    <div class="group">
+      <span id="tech-l">How will you animate it in Fresco?</span>
+      <div class="seg" role="group" aria-labelledby="tech-l" id="tech">
+        <button type="button" data-v="any" aria-pressed="true">Either</button>
+        <button type="button" data-v="frame" aria-pressed="false">Frame by frame</button>
+        <button type="button" data-v="path" aria-pressed="false">Motion path</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero" aria-live="polite">
+    <p class="idea" id="idea"></p>
+    <p class="twist" id="twist" hidden></p>
+    <p class="hint">Like part of your idea? Tap it to keep it, then roll again to change the rest.</p>
+  </section>
+
+  <div class="actions">
+    <button type="button" class="btn primary" id="roll">Roll a new idea</button>
+    <button type="button" class="btn" id="print">Print storyboard sheet</button>
+  </div>
+
+  <section class="plan" aria-label="Animation plan">
+    <div>
+      <h2>Technique</h2>
+      <p class="big" id="p-tech"></p>
+      <p id="p-tech-d"></p>
+    </div>
+    <div>
+      <h2>Length</h2>
+      <p class="big" id="p-len"></p>
+      <p id="p-len-d"></p>
+    </div>
+    <div>
+      <h2>Animation principle to show</h2>
+      <p class="big" id="p-pr"></p>
+      <p id="p-pr-d"></p>
+    </div>
+    <div class="tips">
+      <h2>Fresco tips</h2>
+      <ul id="p-tips"></ul>
+    </div>
+  </section>
+
+  <div class="sb-head">
+    <h2>Storyboard</h2>
+    <p>Sketch each key pose in a box. These are the big moments; you’ll add the frames in between later.</p>
+  </div>
+  <div class="strip-scroll">
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="print-only notes" aria-hidden="true">
+    <h3>Notes: colors, sounds, or changes I want to make</h3>
+    <div></div><div></div><div></div>
+  </div>
+</div>
+
+<script>
+const CHARACTERS = ["a bouncing ball with a face","a sleepy cat","a paper airplane","a nervous teacup","a jellyfish","a frog","a one-wheeled robot","a cactus","a snail","a sock puppet","a slice of pizza","a red balloon","a raindrop","a pencil","a tiny dragon","a jellybean","a little bird","a goldfish","a lightbulb","a snowman","a friendly ghost","an alarm clock","a mushroom","a falling leaf","an octopus","a skateboard","a grumpy cloud","a taco","a penguin","a shooting star","a backpack","a cupcake"];
+
+const SETTINGS = ["on a desk","in the school hallway","under the ocean","on the moon","in a kitchen","at a bus stop","in a rainstorm","on a tightrope","in a fishbowl","on a basketball court","inside a lunchbox","on a windowsill","in a jungle","in outer space","in a snowy field","on a stage","in the library","at the beach","on a rooftop at night","on a sheet of notebook paper","in the cafeteria","on a skateboard ramp"];
+
+const TWISTS = ["it happens in slow motion","gravity flips halfway through","it’s being chased","something startles it at the end","it ends exactly where it started, so it can loop forever","it shrinks a little each time it moves","it changes color when it moves","something falls from the sky","a second character copies everything it does","it gets stuck partway through","it’s very, very windy","the lights turn off at the end","it’s trying not to be noticed","it’s in a huge hurry"];
+
+// tech: frame | path | both. Beats are listed in order; fewer panels picks evenly from these.
+const ACTIONS = [
+ {t:"bounces across the screen",tech:"path",p:"Squash & stretch",beats:["Resting on the ground","Squashes down to get ready","Stretches up into the air","Squashes on the landing","Bounces again, a little lower","Settles to a stop"]},
+ {t:"jumps over a gap",tech:"frame",p:"Anticipation",beats:["Walks up to the edge","Notices the gap","Crouches low to get ready","Leaps through the air","Lands on the other side","Looks back, relieved"]},
+ {t:"slips on a banana peel",tech:"frame",p:"Timing",beats:["Walks along happily","Steps on the peel","Feet fly up","Hangs in the air for a moment","Hits the ground","Sits up, dizzy"]},
+ {t:"falls asleep",tech:"frame",p:"Ease in & ease out",beats:["Wide awake","Yawns big","Eyelids droop","Head nods down","Snaps awake for a second","Falls fully asleep"]},
+ {t:"floats up and away",tech:"path",p:"Arcs",beats:["Sits still on the ground","Starts to lift a little","Drifts up and to one side","Swings back the other way","Gets smaller as it rises","Disappears off the top"]},
+ {t:"sneezes",tech:"frame",p:"Anticipation",beats:["Normal face","Nose twitches","Breathes in, in, in","Head tilts way back","ACHOO! A big burst forward","Wipes nose, embarrassed"]},
+ {t:"zooms past and comes back",tech:"path",p:"Ease in & ease out",beats:["Empty scene","A blur zooms through","The scene is empty again","It slowly backs into view","Stops in the middle","Looks at the viewer"]},
+ {t:"waves hello",tech:"frame",p:"Follow-through",beats:["Standing still","Notices the viewer","Arm raises up","Waves to one side","Waves to the other side","Arm drops, still smiling"]},
+ {t:"gets scared and hides",tech:"frame",p:"Exaggeration",beats:["Calm and happy","Hears a noise","Freezes, eyes wide","Jumps in fright","Dives behind something","Peeks out carefully"]},
+ {t:"spins around",tech:"frame",p:"Timing",beats:["Facing forward","Leans back to wind up","Turns to the side","Faces away","Turns to the other side","Faces forward, dizzy"]},
+ {t:"walks across the screen",tech:"both",p:"Arcs",beats:["Enters from the left","Steps with one foot","Body rises in the middle of the step","Steps with the other foot","Reaches the middle","Exits on the right"]},
+ {t:"grows really big",tech:"frame",p:"Squash & stretch",beats:["Normal size","Takes a deep breath","Starts to swell","Wobbles","Fills most of the frame","Pops, or shrinks back down"]},
+ {t:"melts",tech:"frame",p:"Timing",beats:["Solid and happy","Starts to sweat","Edges begin to drip","Sags in the middle","Turns into a puddle","The puddle still has a face"]},
+ {t:"rolls down a hill",tech:"path",p:"Ease in & ease out",beats:["Sitting at the top","Tips over the edge","Rolls slowly","Rolls faster and faster","Bumps at the bottom","Comes to a wobbly stop"]},
+ {t:"catches something falling",tech:"frame",p:"Anticipation",beats:["Looking around","Something starts to fall","Looks up, surprised","Reaches under it","Catches it with a squash","Shows it off proudly"]},
+ {t:"swings back and forth",tech:"path",p:"Arcs",beats:["Hanging still","Pulled back to one side","Swings through the bottom (fastest)","Reaches the other side (slowest)","Swings back","Slowly comes to rest"]},
+ {t:"dances",tech:"frame",p:"Timing",beats:["Standing still","Starts tapping","Leans left","Leans right","Does one big final move","Freezes in a pose"]},
+ {t:"blinks and looks around",tech:"frame",p:"Secondary action",beats:["Eyes open, looking forward","Eyes close for a blink","Eyes open again","Looks left","Looks right","Looks straight at the viewer"]},
+ {t:"flies a loop-the-loop",tech:"path",p:"Arcs",beats:["Flies in from the side","Starts to climb","Upside down at the top","Dives down","Finishes the loop","Flies off the screen"]},
+ {t:"tries to lift something heavy",tech:"frame",p:"Exaggeration",beats:["Walks up to it","Bends down and grabs it","Pulls, and nothing happens","Shakes and strains","Lifts it up high","Falls over backwards"]},
+ {t:"drifts across the screen",tech:"path",p:"Ease in & ease out",beats:["Starts just off the left edge","Slowly enters","Picks up speed","Glides through the middle","Slows down","Stops at the right edge"]},
+ {t:"hops in place",tech:"frame",p:"Squash & stretch",beats:["Standing","Squashes down","Stretches up","Up in the air","Lands with a squash","Back to standing"]}
+];
+
+const PRINCIPLES = {
+ "Squash & stretch":"Things flatten when they hit and stretch when they move fast. Keep the same amount of “stuff”: wider when squashed, thinner when stretched.",
+ "Anticipation":"A small move the opposite way before the big move. Crouch before a jump, pull back before a throw.",
+ "Timing":"More frames make it slower, fewer frames make it faster. Hold an important pose for a few extra frames so viewers can read it.",
+ "Ease in & ease out":"Real things don’t start or stop at full speed. Put more drawings (or a slower path) near the start and end of a move.",
+ "Arcs":"Most things move along curves, not straight lines. Draw the curve on your storyboard first.",
+ "Follow-through":"Loose parts like hair, ears, tails, and arms keep moving for a moment after the body stops.",
+ "Exaggeration":"Push poses bigger than real life so the feeling is easy to read.",
+ "Secondary action":"A small extra movement that supports the main one, like a tail flick during a blink."
+};
+
+const LEVELS = {
+ warm:{panels:3,twist:false,frame:["12 to 24 frames","That’s 1 to 2 seconds at 12 frames per second. Draw the 3 key poses first, then add a few frames between each."],
+       path:["1 drawing, 2 seconds","Draw your character once, then give it one simple path."]},
+ short:{panels:5,twist:false,frame:["24 to 48 frames","That’s 2 to 4 seconds at 12 frames per second. Your 5 key poses become your anchor frames."],
+        path:["2 to 3 drawings, 3 to 4 seconds","Use one path for the main move. Add a second layer (like the setting or a prop) for depth."]},
+ challenge:{panels:6,twist:true,frame:["48 to 72 frames","That’s 4 to 6 seconds at 12 frames per second. Plan the twist as its own key pose."],
+            path:["3+ layers, 4 to 6 seconds","Give different layers different paths. Use the twist to change the motion partway through."]}
+};
+
+const TECH = {
+ frame:{name:"Frame by frame",d:"You draw the character a little differently on each frame. Best when the body changes shape.",
+   tips:["Add an animated layer and draw your key poses first, then fill in the in-between frames.","Turn on onion skin so you can see the frames before and after the one you’re drawing.","Keep the character simple. Circles and lines are much faster to redraw than details.","Play it back often to check the timing."]},
+ path:{name:"Motion path",d:"You draw the character once and Fresco moves it along a path you set. Best when something travels across the screen.",
+   tips:["Draw your character on its own layer before adding motion.","Sketch the path on your storyboard as a dotted line with arrows.","Keep the background on a separate layer so only the character moves.","Watch the speed: a move that eases in and out looks more natural."]}
+};
+
+const state = {level:"warm",tech:"any",locks:{c:false,a:false,s:false,w:false},c:"",a:null,s:"",w:"",useTech:"frame"};
+
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function actionPool(){
+  if(state.tech==="any") return ACTIONS;
+  return ACTIONS.filter(a=>a.tech===state.tech||a.tech==="both");
+}
+
+function chooseBeats(beats,n){
+  if(n>=beats.length) return beats.slice(0,n);
+  const out=[];
+  for(let i=0;i<n;i++) out.push(beats[Math.round(i*(beats.length-1)/(n-1))]);
+  return out;
+}
+
+function techFor(a){
+  if(state.tech!=="any") return state.tech;
+  return a.tech==="both" ? "frame" : a.tech;
+}
+
+function slot(key,text){
+  const locked=state.locks[key];
+  return `<button type="button" class="slot${locked?" locked":""}" data-k="${key}" aria-pressed="${locked}" title="${locked?"Kept. Tap to let it change.":"Tap to keep this part"}">${text}</button>`;
+}
+
+function renderIdea(spin){
+  const idea=document.getElementById("idea");
+  const c=spin&&spin.c!==undefined?spin.c:state.c;
+  const a=spin&&spin.a!==undefined?spin.a:state.a.t;
+  const s=spin&&spin.s!==undefined?spin.s:state.s;
+  idea.innerHTML=`${slot("c",cap(c))} ${slot("a",a)} ${slot("s",s)}.`;
+  if(spin) idea.querySelectorAll(".slot").forEach(b=>{if(!state.locks[b.dataset.k]) b.classList.add("spinning")});
+  const tw=document.getElementById("twist");
+  if(LEVELS[state.level].twist){
+    tw.hidden=false;
+    const w=spin&&spin.w!==undefined?spin.w:state.w;
+    tw.innerHTML=`<strong>Twist:</strong> ${slot("w",w)}.`;
+  } else tw.hidden=true;
+}
+
+function renderPlan(){
+  const t=state.useTech, lv=LEVELS[state.level];
+  document.getElementById("p-tech").textContent=TECH[t].name;
+  document.getElementById("p-tech-d").textContent=TECH[t].d;
+  document.getElementById("p-len").textContent=lv[t][0];
+  document.getElementById("p-len-d").textContent=lv[t][1];
+  document.getElementById("p-pr").textContent=state.a.p;
+  document.getElementById("p-pr-d").textContent=PRINCIPLES[state.a.p];
+  document.getElementById("p-tips").innerHTML=TECH[t].tips.map(x=>`<li>${x}</li>`).join("");
+
+  const n=lv.panels;
+  let beats=chooseBeats(state.a.beats,lv.twist?n-1:n);
+  const items=beats.map(b=>({b,note:""}));
+  if(lv.twist) items.splice(items.length-1,0,{b:`The twist: ${state.w}`,note:""});
+  const strip=document.getElementById("strip");
+  strip.innerHTML=items.map((it,i)=>`
+    <div class="panel">
+      <div class="draw"><span class="num">${i+1}</span></div>
+      <div class="cap">${cap(it.b)}<small>Frames: ______</small></div>
+    </div>`).join("");
+}
+
+function roll(){
+  const pool=actionPool();
+  if(state.locks.a && !pool.includes(state.a)) state.locks.a=false;
+  const next={
+    c: state.locks.c?state.c:pick(CHARACTERS.filter(x=>x!==state.c)),
+    a: state.locks.a?state.a:pick(pool.filter(x=>x!==state.a)),
+    s: state.locks.s?state.s:pick(SETTINGS.filter(x=>x!==state.s)),
+    w: state.locks.w?state.w:pick(TWISTS.filter(x=>x!==state.w))
+  };
+  const finish=()=>{
+    Object.assign(state,next);
+    state.useTech=techFor(state.a);
+    renderIdea(); renderPlan();
+  };
+  if(reduceMotion||!state.a){finish();return;}
+  // Flipbook shuffle: unlocked parts flicker through options, then land.
+  let ticks=0; const total=9;
+  const pa=actionPool();
+  const id=setInterval(()=>{
+    ticks++;
+    renderIdea({
+      c: state.locks.c?undefined:pick(CHARACTERS),
+      a: state.locks.a?undefined:pick(pa).t,
+      s: state.locks.s?undefined:pick(SETTINGS),
+      w: state.locks.w?undefined:pick(TWISTS)
+    });
+    if(ticks>=total){clearInterval(id);finish();}
+  },55);
+}
+
+function setupSeg(id,key){
+  const seg=document.getElementById(id);
+  seg.addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    state[key]=b.dataset.v;
+    if(key==="tech"){
+      if(state.tech!=="any" && state.a.tech!==state.tech && state.a.tech!=="both"){state.locks.a=false;roll();return;}
+      state.useTech=techFor(state.a);
+    }
+    renderIdea(); renderPlan();
+  });
+}
+
+document.addEventListener("click",e=>{
+  const s=e.target.closest(".slot"); if(!s) return;
+  const k=s.dataset.k; state.locks[k]=!state.locks[k];
+  renderIdea();
+  const again=document.querySelector(`.slot[data-k="${k}"]`); if(again) again.focus();
+});
+document.getElementById("roll").addEventListener("click",roll);
+document.getElementById("print").addEventListener("click",()=>window.print());
+setupSeg("level","level");
+setupSeg("tech","tech");
+
+// first idea
+state.c=pick(CHARACTERS); state.a=pick(ACTIONS); state.s=pick(SETTINGS); state.w=pick(TWISTS);
+state.useTech=techFor(state.a);
+renderIdea(); renderPlan();
+</script>
+</body>
+</html>
