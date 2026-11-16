@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Animation Idea Generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,400..800&display=swap" rel="stylesheet">
-<style id="styles">
+<style>
 :root{
   --maroon:#822336; --maroon-ink:#6a1b2b; --maroon-soft:#f6e9ec;
   --bg:#f3f3f4; --surface:#ffffff; --ink:#1f1f22; --muted:#5d5d66; --line:#d6d6db;
@@ -142,6 +143,11 @@ dialog.editor::backdrop{background:rgba(20,10,14,.55)}
 @media (max-width:560px){.act-row{grid-template-columns:1fr}}
 @media print{dialog,#edit-btn,.status{display:none!important}}
 
+.ex-pick{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1rem 0 0;color:var(--muted);font-size:.95rem}
+.ex-pick select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.45rem .6rem}
+.ex-pick[hidden],[hidden]{display:none!important}
+#export-text{margin-top:.4rem;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;min-height:9rem}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* Print: a storyboard worksheet */
@@ -182,17 +188,7 @@ dialog.editor::backdrop{background:rgba(20,10,14,.55)}
 </style>
 </head>
 <body>
-<div id="app"></div>
-<script type="application/json" id="custom-words">{}</script>
-<script>const SCRIPT_SRC = document.currentScript.textContent;
-
-let CUSTOM = {characters:[],settings:[],twists:[],actions:[],only:{characters:false,settings:false,twists:false,actions:false}};
-try{
-  const raw = JSON.parse(document.getElementById("custom-words").textContent||"{}");
-  CUSTOM = Object.assign(CUSTOM, raw); CUSTOM.only = Object.assign({characters:false,settings:false,twists:false,actions:false}, raw.only||{});
-}catch(e){}
-
-const APP_HTML = `<div class="wrap">
+<div class="wrap">
   <header>
     <h1>Animation Idea Generator</h1>
     <p>Digital Art 1, Toppenish High School</p>
@@ -203,6 +199,13 @@ const APP_HTML = `<div class="wrap">
   </div>
 
   <section class="controls" aria-label="Settings">
+    <div class="group">
+      <span id="mode-l">What do you want?</span>
+      <div class="seg" role="group" aria-labelledby="mode-l" id="mode">
+        <button type="button" data-v="idea" aria-pressed="true">Random idea</button>
+        <button type="button" data-v="classic" aria-pressed="false">Classic exercise</button>
+      </div>
+    </div>
     <div class="group">
       <span id="lvl-l">How big?</span>
       <div class="seg" role="group" aria-labelledby="lvl-l" id="level">
@@ -224,13 +227,15 @@ const APP_HTML = `<div class="wrap">
   <section class="hero" aria-live="polite">
     <p class="idea" id="idea"></p>
     <p class="twist" id="twist" hidden></p>
-    <p class="hint">Like part of your idea? Tap it to keep it, then roll again to change the rest.</p>
+    <p class="hint" id="hint">Like part of your idea? Tap it to keep it, then roll again to change the rest.</p>
+    <label class="ex-pick no-print" id="ex-pick" hidden>Or choose one:
+      <select id="ex-select"></select></label>
   </section>
 
   <div class="actions">
     <button type="button" class="btn primary" id="roll">Roll a new idea</button>
     <button type="button" class="btn" id="print">Print storyboard sheet</button>
-    <button type="button" class="btn quiet" id="edit-btn" hidden>Edit word lists</button>
+    <button type="button" class="btn quiet" id="edit-btn">My word lists</button>
   </div>
   <p class="status no-print" id="mine-note"></p>
 
@@ -272,11 +277,11 @@ const APP_HTML = `<div class="wrap">
 
 <dialog class="editor" id="editor" aria-labelledby="ed-title">
   <div class="ed-head">
-    <h2 id="ed-title">Edit word lists</h2>
+    <h2 id="ed-title">My word lists</h2>
     <button type="button" class="btn quiet" id="ed-close">Close</button>
   </div>
   <div class="ed-body">
-    <p>Add your own characters, actions, settings, and twists. They mix in with the built-in ones unless you choose “use only my words.” Students see the changes as soon as you save; only you can edit.</p>
+    <p>Add your own characters, actions, settings, and twists. They mix in with the built-in ones unless you check “use only mine.” Your words are saved in this browser, so use the same computer and Chrome account to see them next time.</p>
     <section class="ed-sec">
       <h3>Characters</h3>
       <p class="help">One per line. Start each with “a” or “an,” like “a sleepy sloth.” Simple shapes are easiest to animate.</p>
@@ -302,14 +307,32 @@ const APP_HTML = `<div class="wrap">
       <textarea id="ed-twists" placeholder="it has to whisper the whole time&#10;the camera zooms in at the end"></textarea>
       <label class="only"><input type="checkbox" id="only-twists"> Use only my twists</label>
     </section>
+    <section class="ed-sec">
+      <h3>Teachers: share these lists with the whole class</h3>
+      <p class="help">Copy the lists above as code, then paste it between the class-words tags near the bottom of the HTML file on GitHub. Every student will get them, mixed in with the built-in lists.</p>
+      <button type="button" class="btn quiet" id="ed-export">Copy as class list</button>
+      <div id="export-box" hidden>
+        <p class="help" id="export-msg"></p>
+        <textarea id="export-text" readonly></textarea>
+      </div>
+    </section>
   </div>
   <div class="ed-foot">
     <p class="status" id="ed-status" role="status"></p>
-    <button type="button" class="btn quiet" id="ed-cancel">Cancel</button>
-    <button type="button" class="btn primary" id="ed-save">Save word lists</button>
+    <button type="button" class="btn quiet" id="ed-clear">Clear my words</button>
+    <button type="button" class="btn primary" id="ed-save">Save my words</button>
   </div>
-</dialog>`;
-document.getElementById("app").innerHTML = APP_HTML;
+</dialog>
+
+<!--
+  CLASS WORD LIST
+  Paste the code from "My word lists" > "Copy as class list" between the two tags below,
+  replacing the {} that's there now. Every student gets these words.
+  In "only", true means that list replaces the built-in one instead of mixing in.
+-->
+<script type="application/json" id="class-words">{}</script>
+
+<script>
 
 const CHARACTERS = ["a bouncing ball with a face","a sleepy cat","a paper airplane","a nervous teacup","a jellyfish","a frog","a one-wheeled robot","a cactus","a snail","a sock puppet","a slice of pizza","a red balloon","a raindrop","a pencil","a tiny dragon","a jellybean","a little bird","a goldfish","a lightbulb","a snowman","a friendly ghost","an alarm clock","a mushroom","a falling leaf","an octopus","a skateboard","a grumpy cloud","a taco","a penguin","a shooting star","a backpack","a cupcake"];
 
@@ -370,59 +393,130 @@ const TECH = {
    tips:["Draw your character on its own layer before adding motion.","Sketch the path on your storyboard as a dotted line with arrows.","Keep the background on a separate layer so only the character moves.","Watch the speed: a move that eases in and out looks more natural."]}
 };
 
+
+// Classic animation exercises. "challenge" replaces the random twist at the Challenge level.
+const CLASSICS = [
+ {name:"The bouncing ball",tech:"both",p:"Squash & stretch",
+  d:"A ball drops in, bounces a few times, and comes to rest. The first exercise every animator does.",
+  challenge:"animate a heavy bowling ball and a light beach ball side by side",
+  beats:["Ball enters at the top","Falls, stretching as it speeds up","Squashes flat on the ground","Bounces up, a little lower","Smaller bounce","Rolls to a stop"]},
+ {name:"Heavy vs. light",tech:"frame",p:"Timing",
+  d:"Drop two objects of different weights, like a feather and a brick. Only the timing tells us which is heavy.",
+  challenge:"add a third object that’s somewhere in between",
+  beats:["Both objects at the top","They start to fall","The heavy one lands first, hard","The light one drifts down","The light one settles","Both resting"]},
+ {name:"The pendulum",tech:"path",p:"Ease in & ease out",
+  d:"A weight swings on a string. Fast at the bottom, slow at each end.",
+  challenge:"make it slowly lose energy and come to a stop",
+  beats:["Pulled up to one side","Starts to swing (slow)","Fastest at the bottom","Slows at the far side","Swings back","Comes to rest in the middle"]},
+ {name:"The flour sack jump",tech:"frame",p:"Anticipation",
+  d:"A simple sack with no face jumps and lands. All the feeling comes from how it bends.",
+  challenge:"make the sack look nervous before the jump",
+  beats:["Standing still","Crouches down (anticipation)","Stretches up as it jumps","Up in the air","Squashes on landing","Settles back to standing"]},
+ {name:"The blink and head turn",tech:"frame",p:"Secondary action",
+  d:"A simple face blinks, then turns to look at something. Small moves, big personality.",
+  challenge:"add a reaction to whatever it sees",
+  beats:["Looking forward","Eyes close","Eyes open","Eyes look to the side first","Head turns to follow","Holds and blinks again"]},
+ {name:"The waving flag or tail",tech:"frame",p:"Follow-through",
+  d:"A flag, cape, or tail waves. The tip always moves a little after the base.",
+  challenge:"make the wind suddenly stop so it falls limp",
+  beats:["Hanging still","Wind starts at the base","The wave travels to the middle","The tip catches up","Waves the other way","Back to the start (loop)"]},
+ {name:"The falling leaf",tech:"path",p:"Arcs",
+  d:"A leaf drifts down, swinging side to side, and lands softly.",
+  challenge:"have a gust of wind blow it back up once",
+  beats:["Leaf lets go of the branch","Swings left","Swings right","Flips over","Slows near the ground","Lands softly"]},
+ {name:"The simple walk",tech:"frame",p:"Arcs",
+  d:"A basic character takes a few steps. The body rises and falls with each step.",
+  challenge:"change the walk to show a mood: sad, sneaky, or proud",
+  beats:["Contact: one foot forward","Down: weight sinks","Passing: legs cross","Up: body rises","Contact: other foot forward","Loop back to the start"]},
+ {name:"The shape morph",tech:"frame",p:"Timing",
+  d:"One simple shape transforms into another, like a circle into a star.",
+  challenge:"morph through three shapes and back to the first",
+  beats:["Starting shape","It starts to bend","Halfway between","Almost the new shape","Overshoots a little","Settles into the new shape"]},
+ {name:"The ball with a tail",tech:"frame",p:"Follow-through",
+  d:"A bouncing ball with a tail or antenna. The tail drags behind and keeps moving after the ball stops.",
+  challenge:"add a second, longer tail with different timing",
+  beats:["Ball and tail at rest","Ball moves, tail drags behind","Ball squashes, tail keeps going","Ball bounces up, tail whips","Ball stops","Tail wiggles to a stop"]},
+ {name:"The raindrop splash",tech:"frame",p:"Squash & stretch",
+  d:"A drop falls, stretches, and splashes into smaller drops and ripples.",
+  challenge:"make it loop as steady rain",
+  beats:["Drop forms at the top","Falls, stretching longer","Hits the ground and flattens","Splash bursts outward","Small drops fall back","Ripple fades out"]},
+ {name:"Pushing something heavy",tech:"frame",p:"Exaggeration",
+  d:"A character leans into a heavy box and shoves it. The pose has to sell the weight.",
+  challenge:"the box suddenly slides and the character falls forward",
+  beats:["Walks up to the box","Leans in and plants feet","Pushes, nothing moves","Strains harder","The box slides a little","Stops to catch its breath"]}
+];
+
 const GENERIC_BEATS = ["Starting pose","Getting ready","The main move begins","The biggest moment","The reaction","Ending pose"];
+const KEYS = ["characters","actions","settings","twists"];
+const STORE_KEY = "aig-my-words-v1";
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const emptyLists = () => ({characters:[],settings:[],twists:[],actions:[],only:{characters:false,settings:false,twists:false,actions:false}});
+function normalize(raw){
+  const o = emptyLists();
+  if(!raw || typeof raw!=="object") return o;
+  KEYS.forEach(k=>{ if(Array.isArray(raw[k])) o[k]=raw[k]; if(raw.only) o.only[k]=!!raw.only[k]; });
+  return o;
+}
+
+// Class list: set by the teacher in the HTML file. Student list: saved in this browser.
+let CLASS = emptyLists();
+try{ CLASS = normalize(JSON.parse(document.getElementById("class-words").textContent||"{}")); }catch(e){}
+let MINE = emptyLists();
+try{ MINE = normalize(JSON.parse(localStorage.getItem(STORE_KEY)||"null")); }catch(e){}
 
 function list(key, builtIn){
-  const mine = (CUSTOM[key]||[]);
-  if(CUSTOM.only[key] && mine.length) return mine;
-  return builtIn.concat(mine);
+  if(MINE.only[key] && MINE[key].length) return MINE[key];
+  const base = (CLASS.only[key] && CLASS[key].length) ? [] : builtIn;
+  return base.concat(CLASS[key], MINE[key]);
 }
 const chars = () => list("characters", CHARACTERS);
 const sets = () => list("settings", SETTINGS);
 const twists = () => list("twists", TWISTS);
-const allActions = () => list("actions", ACTIONS).map(a => ({...a, beats:(a.beats&&a.beats.length>=2)?a.beats:GENERIC_BEATS, p:PRINCIPLES[a.p]?a.p:"Timing"}));
+const allActions = () => list("actions", ACTIONS).map(a => ({...a, beats:(a.beats&&a.beats.length>=2)?a.beats:GENERIC_BEATS, p:PRINCIPLES[a.p]?a.p:"Timing", tech:["frame","path","both"].includes(a.tech)?a.tech:"both"}));
 
-const state = {level:"warm",tech:"any",locks:{c:false,a:false,s:false,w:false},c:"",a:null,s:"",w:"",useTech:"frame"};
+const state = {mode:"idea",level:"warm",tech:"any",locks:{c:false,a:false,s:false,w:false},c:"",a:null,s:"",w:"",useTech:"frame",ex:null};
 
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const pickNew = (arr,cur) => { const f = arr.filter(x=>x!==cur); return pick(f.length?f:arr); };
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fitsTech = x => state.tech==="any" || x.tech===state.tech || x.tech==="both";
 
 function actionPool(){
   const all = allActions();
-  if(state.tech==="any") return all;
-  const f = all.filter(a=>a.tech===state.tech||a.tech==="both");
-  return f.length ? f : ACTIONS.filter(a=>a.tech===state.tech||a.tech==="both");
+  const f = all.filter(fitsTech);
+  return f.length ? f : ACTIONS.filter(fitsTech);
 }
-
 function chooseBeats(beats,n){
   if(beats.length<=n) return beats.slice();
   const out=[];
   for(let i=0;i<n;i++) out.push(beats[Math.round(i*(beats.length-1)/(n-1))]);
   return out;
 }
-
-function techFor(a){
+function techFor(x){
   if(state.tech!=="any") return state.tech;
-  return a.tech==="both" ? "frame" : a.tech;
+  return x.tech==="both" ? "frame" : x.tech;
 }
-
 function slot(key,text){
   const locked=state.locks[key];
   return `<button type="button" class="slot${locked?" locked":""}" data-k="${key}" aria-pressed="${locked}" title="${locked?"Kept. Tap to let it change.":"Tap to keep this part"}">${esc(text)}</button>`;
 }
 
-function renderIdea(spin){
-  const idea=document.getElementById("idea");
+function renderHero(spin){
+  const idea=document.getElementById("idea"), tw=document.getElementById("twist"), lv=LEVELS[state.level];
+  if(state.mode==="classic"){
+    const ex=state.ex;
+    idea.textContent=ex.name;
+    tw.hidden=false;
+    tw.innerHTML=esc(ex.d)+(lv.twist?`<br><strong>Challenge:</strong> ${esc(ex.challenge)}.`:"");
+    return;
+  }
   const c=spin&&spin.c!==undefined?spin.c:state.c;
   const a=spin&&spin.a!==undefined?spin.a:state.a.t;
   const s=spin&&spin.s!==undefined?spin.s:state.s;
   idea.innerHTML=`${slot("c",cap(c))} ${slot("a",a)} ${slot("s",s)}.`;
   if(spin) idea.querySelectorAll(".slot").forEach(b=>{if(!state.locks[b.dataset.k]) b.classList.add("spinning")});
-  const tw=document.getElementById("twist");
-  if(LEVELS[state.level].twist){
+  if(lv.twist){
     tw.hidden=false;
     const w=spin&&spin.w!==undefined?spin.w:state.w;
     tw.innerHTML=`<strong>Twist:</strong> ${slot("w",w)}.`;
@@ -430,18 +524,19 @@ function renderIdea(spin){
 }
 
 function renderPlan(){
+  const src = state.mode==="classic" ? state.ex : state.a;
   const t=state.useTech, lv=LEVELS[state.level];
   document.getElementById("p-tech").textContent=TECH[t].name;
   document.getElementById("p-tech-d").textContent=TECH[t].d;
   document.getElementById("p-len").textContent=lv[t][0];
   document.getElementById("p-len-d").textContent=lv[t][1];
-  document.getElementById("p-pr").textContent=state.a.p;
-  document.getElementById("p-pr-d").textContent=PRINCIPLES[state.a.p];
+  document.getElementById("p-pr").textContent=src.p;
+  document.getElementById("p-pr-d").textContent=PRINCIPLES[src.p];
   document.getElementById("p-tips").innerHTML=TECH[t].tips.map(x=>`<li>${x}</li>`).join("");
 
   const n=lv.panels;
-  const items=chooseBeats(state.a.beats,lv.twist?n-1:n);
-  if(lv.twist) items.splice(items.length-1,0,`The twist: ${state.w}`);
+  const items=chooseBeats(src.beats,lv.twist?n-1:n);
+  if(lv.twist) items.splice(items.length-1,0, state.mode==="classic" ? `Challenge: ${src.challenge}` : `The twist: ${state.w}`);
   document.getElementById("strip").innerHTML=items.map((b,i)=>`
     <div class="panel">
       <div class="draw"><span class="num">${i+1}</span></div>
@@ -449,7 +544,26 @@ function renderPlan(){
     </div>`).join("");
 }
 
+function renderChrome(){
+  const classic = state.mode==="classic";
+  document.getElementById("roll").textContent = classic ? "Pick a random exercise" : "Roll a new idea";
+  document.getElementById("hint").hidden = classic;
+  document.getElementById("edit-btn").hidden = classic;
+  document.getElementById("mine-note").hidden = classic;
+  document.getElementById("ex-pick").hidden = !classic;
+  if(classic) document.getElementById("ex-select").value = String(CLASSICS.indexOf(state.ex));
+}
+function renderAll(){ renderChrome(); renderHero(); renderPlan(); }
+
+function rollClassic(){
+  const pool = CLASSICS.filter(fitsTech);
+  state.ex = pickNew(pool.length?pool:CLASSICS, state.ex);
+  state.useTech = techFor(state.ex);
+  renderAll();
+}
+
 function roll(){
+  if(state.mode==="classic") return rollClassic();
   const pool=actionPool();
   if(state.locks.a && !pool.some(x=>x.t===state.a.t)) state.locks.a=false;
   const next={
@@ -458,16 +572,12 @@ function roll(){
     s: state.locks.s?state.s:pickNew(sets(),state.s),
     w: state.locks.w?state.w:pickNew(twists(),state.w)
   };
-  const finish=()=>{
-    Object.assign(state,next);
-    state.useTech=techFor(state.a);
-    renderIdea(); renderPlan();
-  };
+  const finish=()=>{ Object.assign(state,next); state.useTech=techFor(state.a); renderHero(); renderPlan(); };
   if(reduceMotion||!state.a){finish();return;}
   let ticks=0;
   const id=setInterval(()=>{
     ticks++;
-    renderIdea({
+    renderHero({
       c: state.locks.c?undefined:pick(chars()),
       a: state.locks.a?undefined:pick(pool).t,
       s: state.locks.s?undefined:pick(sets()),
@@ -483,44 +593,44 @@ function setupSeg(id,key){
     const b=e.target.closest("button"); if(!b) return;
     seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
     state[key]=b.dataset.v;
-    if(key==="tech"){
-      if(state.tech!=="any" && state.a.tech!==state.tech && state.a.tech!=="both"){state.locks.a=false;roll();return;}
-      state.useTech=techFor(state.a);
-    }
-    renderIdea(); renderPlan();
+    if(key==="tech" && state.mode==="idea" && !fitsTech(state.a)){state.locks.a=false;roll();return;}
+    const cur = state.mode==="classic" ? state.ex : state.a;
+    state.useTech=techFor(cur);
+    renderAll();
   });
 }
 
 document.addEventListener("click",e=>{
   const s=e.target.closest(".idea .slot, .twist .slot"); if(!s) return;
   const k=s.dataset.k; state.locks[k]=!state.locks[k];
-  renderIdea();
+  renderHero();
   const again=document.querySelector(`.slot[data-k="${k}"]`); if(again) again.focus();
 });
 document.getElementById("roll").addEventListener("click",roll);
 document.getElementById("print").addEventListener("click",()=>window.print());
+setupSeg("mode","mode");
 setupSeg("level","level");
 setupSeg("tech","tech");
 
+const exSel=document.getElementById("ex-select");
+exSel.innerHTML=CLASSICS.map((x,i)=>`<option value="${i}">${esc(x.name)}</option>`).join("");
+exSel.addEventListener("change",()=>{ state.ex=CLASSICS[+exSel.value]; state.useTech=techFor(state.ex); renderAll(); });
+
 state.c=pick(chars()); state.a=pick(allActions()); state.s=pick(sets()); state.w=pick(twists());
+state.ex=pick(CLASSICS);
 state.useTech=techFor(state.a);
-renderIdea(); renderPlan();
+renderAll();
 
-/* ---------- Teacher word-list editor (only shown to people who can edit the page) ---------- */
-const HEAD_HTML = `<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Animation Idea Generator</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,400..800&display=swap" rel="stylesheet">
-`;
+/* ---------- My word lists (saved in this browser only) ---------- */
 const PRINCIPLE_NAMES = Object.keys(PRINCIPLES);
-let artifactApi = null;
 
+function updateMineNote(){
+  const n=KEYS.reduce((t,k)=>t+MINE[k].length,0);
+  document.getElementById("mine-note").textContent = n ? `Using ${n} item${n===1?"":"s"} from your word lists, saved in this browser.` : "";
+}
 function lines(id){
   return document.getElementById(id).value.split("\n").map(x=>x.trim().replace(/\.$/,"")).filter(Boolean).slice(0,200);
 }
-
 function actionRow(a){
   const opt=(v,l,cur)=>`<option value="${v}"${v===cur?" selected":""}>${l}</option>`;
   const row=document.createElement("div");
@@ -538,18 +648,12 @@ function actionRow(a){
   row.querySelector(".rm").addEventListener("click",()=>row.remove());
   return row;
 }
-
-function openEditor(){
-  document.getElementById("ed-characters").value=CUSTOM.characters.join("\n");
-  document.getElementById("ed-settings").value=CUSTOM.settings.join("\n");
-  document.getElementById("ed-twists").value=CUSTOM.twists.join("\n");
-  ["characters","settings","twists","actions"].forEach(k=>document.getElementById("only-"+k).checked=!!CUSTOM.only[k]);
+function fillEditor(data){
+  ["characters","settings","twists"].forEach(k=>document.getElementById("ed-"+k).value=data[k].join("\n"));
+  KEYS.forEach(k=>document.getElementById("only-"+k).checked=!!data.only[k]);
   const box=document.getElementById("ed-actions"); box.innerHTML="";
-  CUSTOM.actions.forEach(a=>box.appendChild(actionRow(a)));
-  document.getElementById("ed-status").textContent="";
-  document.getElementById("editor").showModal();
+  data.actions.forEach(a=>box.appendChild(actionRow(a)));
 }
-
 function collect(){
   const actions=[...document.querySelectorAll("#ed-actions .act-row")].map(r=>({
     t:r.querySelector(".a-t").value.trim().replace(/\.$/,""),
@@ -557,60 +661,64 @@ function collect(){
     p:r.querySelector(".a-p").value,
     beats:r.querySelector(".a-b").value.split("\n").map(x=>x.trim()).filter(Boolean).slice(0,8)
   })).filter(a=>a.t).slice(0,100);
-  return {
-    characters:lines("ed-characters"), settings:lines("ed-settings"), twists:lines("ed-twists"), actions,
-    only:Object.fromEntries(["characters","settings","twists","actions"].map(k=>[k,document.getElementById("only-"+k).checked]))
-  };
+  return {characters:lines("ed-characters"),settings:lines("ed-settings"),twists:lines("ed-twists"),actions,
+    only:Object.fromEntries(KEYS.map(k=>[k,document.getElementById("only-"+k).checked]))};
 }
-
-function buildPage(data){
-  const json=JSON.stringify(data).replace(/</g,"\\u003c");
-  return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>"+HEAD_HTML+"<style id=\"styles\">"+document.getElementById("styles").textContent+"<\/style>\n</head>\n<body>\n<div id=\"app\"></div>\n"+
-    "<script type=\"application/json\" id=\"custom-words\">"+json+"<\/script>\n<script>"+SCRIPT_SRC+"<\/script>\n</body>\n</html>\n";
+function openEditor(){
+  fillEditor(MINE);
+  document.getElementById("ed-status").textContent="";
+  document.getElementById("export-box").hidden=true;
+  document.getElementById("editor").showModal();
 }
-
-async function save(){
+function applyLists(){
+  // Re-roll anything that no longer exists in the lists.
+  if(!chars().includes(state.c)){state.c=pick(chars());state.locks.c=false;}
+  if(!sets().includes(state.s)){state.s=pick(sets());state.locks.s=false;}
+  if(!twists().includes(state.w)){state.w=pick(twists());state.locks.w=false;}
+  const pool=actionPool();
+  if(!pool.some(x=>x.t===state.a.t)){state.a=pick(pool);state.locks.a=false;state.useTech=techFor(state.a);}
+  updateMineNote(); renderAll();
+}
+function save(){
   const status=document.getElementById("ed-status");
-  const btn=document.getElementById("ed-save");
-  if(!artifactApi){status.textContent="Saving isn’t available in this view. Open the page from your claude.ai artifact link.";return;}
-  btn.disabled=true; status.textContent="Saving…";
+  MINE=normalize(collect());
   try{
-    await artifactApi.publish(buildPage(collect()));
-    status.textContent="Saved. The page is reloading with your words.";
-  }catch(err){
-    btn.disabled=false;
-    const code=err&&err.code;
-    if(code==="conflict") status.textContent="This page was just updated somewhere else. It will reload; add your words again after it does.";
-    else if(code==="not_writer"||code==="not_granted"||code==="consent_required"||code==="capability_disabled"||code==="capability_removed"){
-      status.textContent="This view can’t change the page. Only the page’s owner can edit word lists.";
-      document.getElementById("edit-btn").hidden=true;
-    }
-    else if(code==="rate_limited") status.textContent="Too many saves in a row. Wait a minute, then save again.";
-    else if(code==="too_large") status.textContent="The lists are too long to save. Remove some entries and try again.";
-    else status.textContent="The save didn’t go through. Check your connection and save again.";
+    localStorage.setItem(STORE_KEY,JSON.stringify(MINE));
+    status.textContent="Saved in this browser.";
+  }catch(e){
+    status.textContent="Your words are in use now, but this browser won’t keep them after you close the page.";
   }
+  applyLists();
+  setTimeout(()=>{ if(status.textContent==="Saved in this browser.") document.getElementById("editor").close(); },700);
+}
+function clearMine(){
+  if(!confirm("Clear all of your own words? The built-in lists stay.")) return;
+  MINE=emptyLists();
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  fillEditor(MINE);
+  document.getElementById("ed-status").textContent="Your words are cleared.";
+  applyLists();
+}
+async function exportLists(){
+  const box=document.getElementById("export-box"), out=document.getElementById("export-text");
+  out.value=JSON.stringify(collect(),null,2);
+  box.hidden=false;
+  out.focus(); out.select();
+  try{ await navigator.clipboard.writeText(out.value); document.getElementById("export-msg").textContent="Copied. Paste it between the class-words tags in the HTML file."; }
+  catch(e){ document.getElementById("export-msg").textContent="Select all of this and copy it, then paste it between the class-words tags in the HTML file."; }
 }
 
 document.getElementById("edit-btn").addEventListener("click",openEditor);
 document.getElementById("ed-close").addEventListener("click",()=>document.getElementById("editor").close());
-document.getElementById("ed-cancel").addEventListener("click",()=>document.getElementById("editor").close());
 document.getElementById("ed-add").addEventListener("click",()=>{
   const r=actionRow({tech:"frame",p:"Anticipation"});
   document.getElementById("ed-actions").appendChild(r); r.querySelector(".a-t").focus();
 });
 document.getElementById("ed-save").addEventListener("click",save);
+document.getElementById("ed-clear").addEventListener("click",clearMine);
+document.getElementById("ed-export").addEventListener("click",exportLists);
+updateMineNote();
 
-const mineCount=CUSTOM.characters.length+CUSTOM.settings.length+CUSTOM.twists.length+CUSTOM.actions.length;
-if(mineCount) document.getElementById("mine-note").textContent=`Includes ${mineCount} of your own entr${mineCount===1?"y":"ies"}.`;
-
-(async()=>{
-  if(!window.claude||typeof window.claude.use!=="function") return;
-  try{
-    const [art,user]=await Promise.all([window.claude.use("artifact"),window.claude.use("user")]);
-    if(!art||!user) return;
-    if(user.isOwner()||user.canEdit()){ artifactApi=art; document.getElementById("edit-btn").hidden=false; }
-  }catch(e){}
-})();
 </script>
 </body>
 </html>
